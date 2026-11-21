@@ -1,0 +1,964 @@
+{
+  "name": "PFE Search Engine",
+  "description": null,
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "fr-FR,fr;q=0.9,en;q=0.8"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "6c1f61c7-72dc-4081-b2fc-43fa1309f81a",
+      "name": "Récupérer la page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        640,
+        -32
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "html": "={{ $json.data || '' }}",
+        "destinationKey": "markdown",
+        "options": {
+          "ignore": "script,style,noscript,svg,iframe,nav,form,button",
+          "maxConsecutiveNewlines": 2
+        }
+      },
+      "id": "31363d69-3e01-4531-b3e9-55913d19101b",
+      "name": "HTML vers Markdown",
+      "type": "n8n-nodes-base.markdown",
+      "typeVersion": 1,
+      "position": [
+        912,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "url",
+              "type": "string",
+              "value": "={{ $json.url }}"
+            },
+            {
+              "id": "a2",
+              "name": "texte",
+              "type": "string",
+              "value": "={{ ($json.texte || '').slice(0, 12000) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "de44fdfe-9f83-4f34-9747-53b37af1ac23",
+      "name": "Nettoyer et tronquer",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1168,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "text": "=Page : {{ $json.url }}\n\nContenu :\n{{ $json.texte }}",
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"additionalProperties\": false,\n  \"properties\": {\n    \"is_stage_offer\": {\n      \"type\": \"string\",\n      \"enum\": [\"oui\", \"non\"],\n      \"description\": \"Indique si la page présente réellement une offre de stage.\"\n    },\n    \"etat_offre\": {\n      \"type\": \"string\",\n      \"enum\": [\"ouverte\", \"fermee\", \"non_precisee\"],\n      \"description\": \"État explicitement indiqué pour l'offre.\"\n    },\n    \"entreprise\": {\n      \"type\": \"string\",\n      \"description\": \"Nom exact de l'entreprise.\"\n    },\n    \"poste\": {\n      \"type\": \"string\",\n      \"description\": \"Intitulé exact du stage.\"\n    },\n    \"description\": {\n      \"type\": \"string\",\n      \"description\": \"Résumé factuel de l'offre en deux ou trois phrases.\"\n    },\n    \"missions\": {\n      \"type\": \"string\",\n      \"description\": \"Missions séparées par des points-virgules.\"\n    },\n    \"profil_cible\": {\n      \"type\": \"string\",\n      \"description\": \"Formation, niveau d'études et prérequis recherchés.\"\n    },\n    \"competences_cles\": {\n      \"type\": \"string\",\n      \"description\": \"Compétences, outils et technologies explicitement demandés, séparés par des points-virgules.\"\n    },\n    \"domaine\": {\n      \"type\": \"string\",\n      \"description\": \"Domaine principal du stage, par exemple Data Science, BI, IA, développement ou cybersécurité.\"\n    },\n    \"type_stage\": {\n      \"type\": \"string\",\n      \"enum\": [\"PFE\", \"stage\", \"alternance\", \"autre\", \"non_precise\"],\n      \"description\": \"Type d'opportunité explicitement indiqué.\"\n    },\n    \"pays\": {\n      \"type\": \"string\",\n      \"description\": \"Pays du stage.\"\n    },\n    \"ville\": {\n      \"type\": \"string\",\n      \"description\": \"Ville du stage.\"\n    },\n    \"mode_travail\": {\n      \"type\": \"string\",\n      \"enum\": [\"presentiel\", \"hybride\", \"distance\", \"non_precise\"],\n      \"description\": \"Mode de travail explicitement indiqué.\"\n    },\n    \"date_publication\": {\n      \"type\": \"string\",\n      \"description\": \"Date de publication au format YYYY-MM-DD uniquement si elle est explicite et non ambiguë.\"\n    },\n    \"date_limite\": {\n      \"type\": \"string\",\n      \"description\": \"Date limite au format YYYY-MM-DD uniquement si elle est explicite et non ambiguë.\"\n    },\n    \"date_debut\": {\n      \"type\": \"string\",\n      \"description\": \"Date ou période de début explicitement indiquée.\"\n    },\n    \"duree\": {\n      \"type\": \"string\",\n      \"description\": \"Durée du stage explicitement indiquée.\"\n    },\n    \"remuneration_status\": {\n      \"type\": \"string\",\n      \"enum\": [\"confirmee\", \"non_remuneree\", \"non_precisee\"],\n      \"description\": \"confirmee si une rémunération ou gratification est annoncée, non_remuneree si l'absence de rémunération est explicite, non_precisee sinon.\"\n    },\n    \"remuneration_amount\": {\n      \"type\": \"string\",\n      \"description\": \"Montant exact de la rémunération, sans en inventer.\"\n    },\n    \"remuneration_currency\": {\n      \"type\": \"string\",\n      \"description\": \"Devise explicitement indiquée.\"\n    },\n    \"remuneration_period\": {\n      \"type\": \"string\",\n      \"description\": \"Période de rémunération, par exemple mensuelle ou globale.\"\n    },\n    \"remuneration_details\": {\n      \"type\": \"string\",\n      \"description\": \"Informations complémentaires sur la gratification, les primes ou les avantages.\"\n    },\n    \"remuneration_evidence\": {\n      \"type\": \"string\",\n      \"description\": \"Court extrait du texte prouvant l'information sur la rémunération.\"\n    },\n    \"url_candidature\": {\n      \"type\": \"string\",\n      \"description\": \"URL de candidature explicitement présente dans la page.\"\n    },\n    \"contact_candidature\": {\n      \"type\": \"string\",\n      \"description\": \"Email, téléphone ou contact explicitement indiqué pour candidater.\"\n    },\n    \"extraction_notes\": {\n      \"type\": \"string\",\n      \"description\": \"Informations ambiguës ou limites importantes rencontrées pendant l'extraction.\"\n    }\n  },\n  \"required\": [\n    \"is_stage_offer\",\n    \"etat_offre\",\n    \"entreprise\",\n    \"poste\",\n    \"description\",\n    \"missions\",\n    \"profil_cible\",\n    \"competences_cles\",\n    \"domaine\",\n    \"type_stage\",\n    \"pays\",\n    \"ville\",\n    \"mode_travail\",\n    \"date_publication\",\n    \"date_limite\",\n    \"date_debut\",\n    \"duree\",\n    \"remuneration_status\",\n    \"remuneration_amount\",\n    \"remuneration_currency\",\n    \"remuneration_period\",\n    \"remuneration_details\",\n    \"remuneration_evidence\",\n    \"url_candidature\",\n    \"contact_candidature\",\n    \"extraction_notes\"\n  ]\n}",
+        "options": {
+          "systemPromptTemplate": "Tu es un extracteur strict d'offres de stage.\n\nExtrais uniquement les informations explicitement présentes dans le contenu fourni. N'utilise aucune connaissance extérieure et n'invente aucune information.\n\nToutes les valeurs doivent être des chaînes de caractères.\n\nSi une information est absente, utilise une chaîne vide, sauf pour les champs possédant des valeurs autorisées.\n\nRègles particulières :\n\n1. is_stage_offer vaut \"oui\" uniquement si la page présente réellement une offre de stage ou de PFE. Sinon, utilise \"non\".\n2. etat_offre vaut \"fermee\" uniquement si la fermeture ou l'expiration est explicite. N'interprète pas une absence d'information comme une fermeture.\n3. type_stage vaut \"PFE\" uniquement lorsque PFE ou projet de fin d'études est explicitement mentionné.\n4. mode_travail vaut \"non_precise\" si le mode de travail n'est pas indiqué.\n5. remuneration_status vaut \"confirmee\" uniquement si une rémunération, gratification, indemnité ou un montant est explicitement annoncé.\n6. remuneration_status vaut \"non_remuneree\" uniquement si l'offre indique explicitement que le stage n'est pas rémunéré.\n7. Dans tous les autres cas, remuneration_status vaut \"non_precisee\".\n8. N'infère jamais une rémunération à partir de la réputation de l'entreprise.\n9. Les dates doivent utiliser le format YYYY-MM-DD uniquement lorsqu'elles sont explicites et non ambiguës.\n10. Les extraits de preuve doivent rester courts et fidèles au texte source.\n11. Si la page contient plusieurs offres différentes, signale-le dans extraction_notes au lieu de fusionner arbitrairement leurs informations.",
+          "batching": {
+            "batchSize": 1,
+            "delayBetweenBatches": 30000
+          }
+        }
+      },
+      "id": "08b28c2f-81ae-4cf5-a7a3-06b3effbe389",
+      "name": "Extraire les informations",
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        1632,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "model": "=openai/gpt-oss-120b",
+        "options": {
+          "maxTokensToSample": 2048,
+          "temperature": 0
+        }
+      },
+      "id": "54e66995-e81b-43cd-b23d-351caf7bbfc5",
+      "name": "Groq Chat Model (GPT-OSS 120B)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const raw = $json.output ?? {};\nconst sourceUrl = $('Nettoyer et tronquer').item.json.url ?? '';\n\nfunction clean(value) {\n  if (Array.isArray(value)) {\n    return value\n      .map((item) => String(item).trim())\n      .filter(Boolean)\n      .join('; ');\n  }\n\n  return value === null || value === undefined\n    ? ''\n    : String(value).trim();\n}\n\nfunction normalizeUrl(value) {\n  const original = clean(value);\n\n  if (!original) {\n    return '';\n  }\n\n  const cleanedUrl = original\n    .replace(/\\\\\\//g, '/')\n    .split('#')[0];\n\n  const questionMarkIndex = cleanedUrl.indexOf('?');\n\n  const base = questionMarkIndex >= 0\n    ? cleanedUrl.slice(0, questionMarkIndex)\n    : cleanedUrl;\n\n  const query = questionMarkIndex >= 0\n    ? cleanedUrl.slice(questionMarkIndex + 1)\n    : '';\n\n  const ignoredParameters = new Set([\n    'utm_source',\n    'utm_medium',\n    'utm_campaign',\n    'utm_term',\n    'utm_content',\n    'rcm',\n    'skipredirect'\n  ]);\n\n  const retainedParameters = query\n    .split('&')\n    .filter(Boolean)\n    .filter((parameter) => {\n      let key = parameter.split('=')[0] || '';\n\n      try {\n        key = decodeURIComponent(key);\n      } catch {\n        key = key;\n      }\n\n      return !ignoredParameters.has(key.toLowerCase());\n    });\n\n  const normalizedBase = base.replace(/\\/$/, '');\n\n  return retainedParameters.length\n    ? `${normalizedBase}?${retainedParameters.join('&')}`\n    : normalizedBase;\n}\n\nfunction slug(value) {\n  return clean(value)\n    .normalize('NFD')\n    .replace(/[\\u0300-\\u036f]/g, '')\n    .toLowerCase()\n    .replace(/[^a-z0-9]+/g, '-')\n    .replace(/^-+|-+$/g, '');\n}\n\nfunction fnv1a(value) {\n  let hash = 0x811c9dc5;\n\n  for (let index = 0; index < value.length; index += 1) {\n    hash ^= value.charCodeAt(index);\n    hash = Math.imul(hash, 0x01000193);\n  }\n\n  return (hash >>> 0)\n    .toString(16)\n    .padStart(8, '0');\n}\n\nconst entreprise = clean(raw.entreprise);\nconst poste = clean(raw.poste);\nconst description = clean(raw.description);\nconst missions = clean(raw.missions);\nconst profilCible = clean(raw.profil_cible);\nconst competencesCles = clean(raw.competences_cles);\nconst domaine = clean(raw.domaine);\nconst typeStage = clean(raw.type_stage);\n\nconst pays = clean(raw.pays);\nconst ville = clean(raw.ville);\nconst modeTravail = clean(raw.mode_travail);\n\nconst datePublication = clean(raw.date_publication);\nconst dateLimite = clean(raw.date_limite);\nconst dateDebut = clean(raw.date_debut);\nconst duree = clean(raw.duree);\n\nconst remunerationStatus = clean(raw.remuneration_status);\nconst remunerationAmount = clean(raw.remuneration_amount);\nconst remunerationCurrency = clean(raw.remuneration_currency);\nconst remunerationPeriod = clean(raw.remuneration_period);\nconst remunerationDetails = clean(raw.remuneration_details);\nconst remunerationEvidence = clean(raw.remuneration_evidence);\n\nconst normalizedSourceUrl = normalizeUrl(sourceUrl);\nconst applicationUrl = normalizeUrl(raw.url_candidature);\n\nconst identityParts = [\n  entreprise,\n  poste,\n  ville,\n  datePublication\n]\n  .map(slug)\n  .filter(Boolean);\n\nconst identityBase = identityParts.length >= 2\n  ? identityParts.join('|')\n  : applicationUrl || normalizedSourceUrl;\n\nconst offerId = `offer_${fnv1a(identityBase)}`;\n\nconst urlForDomain = applicationUrl || normalizedSourceUrl;\n\nconst domainMatch = urlForDomain.match(\n  /^https?:\\/\\/([^/?#]+)/i\n);\n\nconst sourceDomain = domainMatch\n  ? domainMatch[1]\n      .replace(/^www\\./i, '')\n      .toLowerCase()\n  : '';\n\nconst completenessValues = [\n  entreprise,\n  poste,\n  description,\n  missions,\n  profilCible,\n  competencesCles,\n  domaine,\n  pays,\n  ville,\n  dateLimite,\n  duree,\n  modeTravail !== 'non_precise'\n    ? modeTravail\n    : '',\n  remunerationStatus !== 'non_precisee'\n    ? remunerationStatus\n    : ''\n];\n\nconst completedFields = completenessValues.filter(\n  (value) => clean(value)\n).length;\n\nconst completenessScore = Math.round(\n  completedFields / completenessValues.length * 100\n);\n\nlet extractionStatus = 'nouvelle';\n\nif (clean(raw.is_stage_offer) !== 'oui') {\n  extractionStatus = 'rejetee_non_stage';\n} else if (clean(raw.etat_offre) === 'fermee') {\n  extractionStatus = 'fermee';\n} else if (!entreprise || !poste || !pays) {\n  extractionStatus = 'a_verifier';\n}\n\nconst remunerationPriorities = {\n  confirmee: 'prioritaire',\n  non_precisee: 'a_confirmer',\n  non_remuneree: 'faible'\n};\n\nconst remunerationPriority =\n  remunerationPriorities[remunerationStatus]\n  ?? 'a_confirmer';\n\nreturn {\n  json: {\n    offer_id: offerId,\n\n    is_stage_offer: clean(raw.is_stage_offer),\n    etat_offre: clean(raw.etat_offre),\n\n    entreprise,\n    poste,\n    description,\n    missions,\n    profil_cible: profilCible,\n    competences_cles: competencesCles,\n    domaine,\n    type_stage: typeStage,\n\n    pays,\n    ville,\n    mode_travail: modeTravail,\n\n    date_publication: datePublication,\n    date_limite: dateLimite,\n    date_debut: dateDebut,\n    duree,\n\n    remuneration_status: remunerationStatus,\n    remuneration_priority: remunerationPriority,\n    remuneration_amount: remunerationAmount,\n    remuneration_currency: remunerationCurrency,\n    remuneration_period: remunerationPeriod,\n    remuneration_details: remunerationDetails,\n    remuneration_evidence: remunerationEvidence,\n\n    source_url: normalizedSourceUrl,\n    url_candidature: applicationUrl,\n    source_domain: sourceDomain,\n    contact_candidature: clean(\n      raw.contact_candidature\n    ),\n\n    extraction_notes: clean(raw.extraction_notes),\n\n    completeness_score: completenessScore,\n    extraction_status: extractionStatus,\n    analysis_status: 'pending',\n    trello_status: 'not_created',\n\n    detected_at: new Date().toISOString()\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2080,
+        224
+      ],
+      "id": "ee80b529-4b6a-4d0d-b50d-644fa69373f1",
+      "name": "Normaliser, contrôler et identifier"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "pfe_offers"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "offer_id",
+              "keyValue": "={{ $json.offer_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {
+            "selected_for_application": false
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "offer_id",
+              "displayName": "offer_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "is_stage_offer",
+              "displayName": "is_stage_offer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "etat_offre",
+              "displayName": "etat_offre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "entreprise",
+              "displayName": "entreprise",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "poste",
+              "displayName": "poste",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "description",
+              "displayName": "description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "missions",
+              "displayName": "missions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "profil_cible",
+              "displayName": "profil_cible",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "competences_cles",
+              "displayName": "competences_cles",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "domaine",
+              "displayName": "domaine",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "type_stage",
+              "displayName": "type_stage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "pays",
+              "displayName": "pays",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ville",
+              "displayName": "ville",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "mode_travail",
+              "displayName": "mode_travail",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "date_publication",
+              "displayName": "date_publication",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "date_limite",
+              "displayName": "date_limite",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "date_debut",
+              "displayName": "date_debut",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "duree",
+              "displayName": "duree",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "remuneration_status",
+              "displayName": "remuneration_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "remuneration_priority",
+              "displayName": "remuneration_priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "remuneration_amount",
+              "displayName": "remuneration_amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "remuneration_currency",
+              "displayName": "remuneration_currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "remuneration_period",
+              "displayName": "remuneration_period",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "remuneration_details",
+              "displayName": "remuneration_details",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "remuneration_evidence",
+              "displayName": "remuneration_evidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source_url",
+              "displayName": "source_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "url_candidature",
+              "displayName": "url_candidature",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "source_domain",
+              "displayName": "source_domain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "contact_candidature",
+              "displayName": "contact_candidature",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "extraction_notes",
+              "displayName": "extraction_notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "completeness_score",
+              "displayName": "completeness_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "extraction_status",
+              "displayName": "extraction_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "detected_at",
+              "displayName": "detected_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "first_seen_at",
+              "displayName": "first_seen_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "last_seen_at",
+              "displayName": "last_seen_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "content_hash",
+              "displayName": "content_hash",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "analysis_status",
+              "displayName": "analysis_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "relevance_score",
+              "displayName": "relevance_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "viability_status",
+              "displayName": "viability_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "priority_level",
+              "displayName": "priority_level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "analysis_report",
+              "displayName": "analysis_report",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "selected_for_application",
+              "displayName": "selected_for_application",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "rejection_reason",
+              "displayName": "rejection_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "cv_status",
+              "displayName": "cv_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "cv_path",
+              "displayName": "cv_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "cover_letter_status",
+              "displayName": "cover_letter_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "cover_letter_path",
+              "displayName": "cover_letter_path",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "trello_status",
+              "displayName": "trello_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "trello_card_id",
+              "displayName": "trello_card_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "trello_card_url",
+              "displayName": "trello_card_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "application_status",
+              "displayName": "application_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "sent_at",
+              "displayName": "sent_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "follow_up_count",
+              "displayName": "follow_up_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "next_follow_up_at",
+              "displayName": "next_follow_up_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "terminal_reason",
+              "displayName": "terminal_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2464,
+        224
+      ],
+      "id": "fd330275-42d8-41fb-9a74-55312ed8d4e3",
+      "name": "Enregistrer ou mettre à jour l'offre"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 11
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -528,
+        48
+      ],
+      "id": "85f12c0c-a1e7-40e9-9241-837d5da3dda4",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://www.dreamjob.ma/stage/feed/",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        -288,
+        160
+      ],
+      "id": "58e5f071-2fea-4bae-a697-9d2614144f44",
+      "name": "Collecter Dreamjob"
+    },
+    {
+      "parameters": {
+        "jsCode": "const pfePatterns = [\n  /\\bpfe\\b/i,\n  /projet\\s+de\\s+fin\\s+d['’]études?/i,\n  /stage\\s+de\\s+fin\\s+d['’]études?/i,\n  /stages?\\s+de\\s+fin\\s+d['’]études?/i,\n  /stagiaires?\\s+pfe/i,\n];\n\nfunction decodeHtmlEntities(value) {\n  const entities = {\n    nbsp: ' ',\n    amp: '&',\n    quot: '\"',\n    apos: \"'\",\n    lt: '<',\n    gt: '>',\n    eacute: 'é',\n    egrave: 'è',\n    ecirc: 'ê',\n    agrave: 'à',\n    acirc: 'â',\n    ugrave: 'ù',\n    ucirc: 'û',\n    ocirc: 'ô',\n    ccedil: 'ç',\n    rsquo: '’',\n    laquo: '«',\n    raquo: '»',\n    hellip: '…',\n  };\n\n  return String(value ?? '')\n    .replace(/&#x([0-9a-f]+);/gi, (match, hex) => {\n      const code = Number.parseInt(hex, 16);\n      return Number.isFinite(code) ? String.fromCodePoint(code) : match;\n    })\n    .replace(/&#(\\d+);/g, (match, decimal) => {\n      const code = Number.parseInt(decimal, 10);\n      return Number.isFinite(code) ? String.fromCodePoint(code) : match;\n    })\n    .replace(/&([a-z]+);/gi, (match, name) => {\n      return entities[name.toLowerCase()] ?? match;\n    });\n}\n\nfunction htmlToText(value) {\n  return decodeHtmlEntities(\n    String(value ?? '')\n      .replace(/<script[\\s\\S]*?<\\/script>/gi, ' ')\n      .replace(/<style[\\s\\S]*?<\\/style>/gi, ' ')\n      .replace(/<noscript[\\s\\S]*?<\\/noscript>/gi, ' ')\n      .replace(/<br\\s*\\/?>/gi, '\\n')\n      .replace(/<\\/(p|div|li|h1|h2|h3|h4|h5|h6|tr)>/gi, '\\n')\n      .replace(/<[^>]+>/g, ' ')\n  )\n    .replace(/\\r/g, '')\n    .replace(/[ \\t]+/g, ' ')\n    .replace(/ *\\n */g, '\\n')\n    .replace(/\\n{3,}/g, '\\n\\n')\n    .trim();\n}\n\nfunction normalizeUrl(value) {\n  return String(value ?? '')\n    .trim()\n    .replace(/\\\\\\//g, '/')\n    .split('#')[0]\n    .replace(/\\/+$/, '');\n}\n\nconst results = [];\nconst seenUrls = new Set();\n\nfor (const item of $input.all()) {\n  const raw = item.json ?? {};\n\n  const title = htmlToText(raw.title);\n  const summary = htmlToText(\n    raw.contentSnippet ?? raw.description ?? ''\n  );\n\n  const searchableText = `${title}\\n${summary}`;\n\n  const isPfeOffer = pfePatterns.some((pattern) =>\n    pattern.test(searchableText)\n  );\n\n  if (!isPfeOffer) {\n    continue;\n  }\n\n  const url = normalizeUrl(raw.link ?? raw.guid);\n\n  if (!url || seenUrls.has(url)) {\n    continue;\n  }\n\n  seenUrls.add(url);\n\n  const articleContent = htmlToText(\n    raw.content ??\n    raw['content:encoded'] ??\n    raw.description ??\n    ''\n  );\n\n  const texte = [\n    title ? `Titre : ${title}` : '',\n    summary ? `Résumé : ${summary}` : '',\n    articleContent\n      ? `Contenu de l'annonce :\\n${articleContent}`\n      : '',\n  ]\n    .filter(Boolean)\n    .join('\\n\\n')\n    .slice(0, 12000);\n\n  results.push({\n    json: {\n      url,\n      texte,\n      discovery_source: 'dreamjob',\n      discovery_title: title,\n      discovery_summary: summary,\n      discovery_date: String(\n        raw.isoDate ?? raw.pubDate ?? ''\n      ).trim(),\n    },\n  });\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -64,
+        160
+      ],
+      "id": "5386bef5-5163-43e4-aed0-cdf24a88a668",
+      "name": "Filtrer les PFE Dreamjob"
+    },
+    {
+      "parameters": {
+        "operation": "rowNotExists",
+        "dataTableId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list",
+          "cachedResultName": "pfe_offers"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "source_url",
+              "keyValue": "={{ $json.url }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        272,
+        128
+      ],
+      "id": "7453fdb1-774a-4e63-b2cf-c6b340e8d5f3",
+      "name": "Ignorer les URLs déjà collectées"
+    }
+  ],
+  "connections": {
+    "Récupérer la page": {
+      "main": [
+        [
+          {
+            "node": "HTML vers Markdown",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML vers Markdown": {
+      "main": [
+        [
+          {
+            "node": "Nettoyer et tronquer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Nettoyer et tronquer": {
+      "main": [
+        [
+          {
+            "node": "Extraire les informations",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraire les informations": {
+      "main": [
+        [
+          {
+            "node": "Normaliser, contrôler et identifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normaliser, contrôler et identifier": {
+      "main": [
+        [
+          {
+            "node": "Enregistrer ou mettre à jour l'offre",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enregistrer ou mettre à jour l'offre": {
+      "main": [
+        []
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Collecter Dreamjob",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collecter Dreamjob": {
+      "main": [
+        [
+          {
+            "node": "Filtrer les PFE Dreamjob",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrer les PFE Dreamjob": {
+      "main": [
+        [
+          {
+            "node": "Ignorer les URLs déjà collectées",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ignorer les URLs déjà collectées": {
+      "main": [
+        [
+          {
+            "node": "Nettoyer et tronquer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model (GPT-OSS 120B)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extraire les informations",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [
+    {
+      "id": "d4a65701-c827-4c36-8b96-51b983ceeb43",
+      "name": "Préparer et dédupliquer la source",
+      "nodeIds": [
+        "6c1f61c7-72dc-4081-b2fc-43fa1309f81a",
+        "31363d69-3e01-4531-b3e9-55913d19101b",
+        "de44fdfe-9f83-4f34-9747-53b37af1ac23",
+        "7453fdb1-774a-4e63-b2cf-c6b340e8d5f3"
+      ],
+      "description": "Vérifie les URLs déjà collectées et prépare un texte court. Les nœuds HTTP et Markdown sont réservés aux futures sources web."
+    },
+    {
+      "id": "9f6ec7d7-1aaf-435a-bd41-1ae17e66e761",
+      "name": "Extraire l'offre de stage",
+      "nodeIds": [
+        "08b28c2f-81ae-4cf5-a7a3-06b3effbe389",
+        "54e66995-e81b-43cd-b23d-351caf7bbfc5",
+        "ee80b529-4b6a-4d0d-b50d-644fa69373f1",
+        "fd330275-42d8-41fb-9a74-55312ed8d4e3"
+      ],
+      "description": "GPT-OSS 120B extrait les faits de l'annonce, puis le workflow normalise, contrôle et enregistre le résultat."
+    }
+  ],
+  "pinData": {},
+  "tags": []
+}

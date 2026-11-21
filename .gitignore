@@ -1,0 +1,23 @@
+# Credentials and local configuration
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# Raw n8n exports may contain personal metadata
+*.raw.json
+exports/private/
+
+# Runtime data
+*.sqlite
+*.sqlite3
+*.db
+logs/
+
+# Dependencies and editor files
+node_modules/
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

@@ -1,0 +1,11 @@
+{
+  "name": "pfe-search-engine",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pipeline n8n local pour détecter, structurer et dédupliquer des offres de stage PFE au Maroc.",
+  "type": "module",
+  "scripts": {
+    "sanitize": "node scripts/sanitize-workflow.mjs",
+    "validate": "node scripts/validate-public-workflow.mjs workflow/pfe-search-engine.json"
+  }
+}
